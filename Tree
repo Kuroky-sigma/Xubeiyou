@@ -1,0 +1,415 @@
+typedef struct BTNode {
+    int data;
+    BTNode *lchild,*rchild;
+}BTNode,*BiTree;
+
+typedef struct ThreadNode {
+    int data;
+    ThreadNode *lchild,*rchild;
+    int ltag,rtag;
+}ThreadNode,*ThreadTree;
+
+typedef struct {
+    BiTree p;
+    int level;
+}DWNode;
+
+void visit(BTNode *p){
+    printf("%d ",p->data);
+}
+void Pre_Order(BiTree T){
+    if(T){
+        visit(T);
+        Pre_Order(T->lchild);
+        Pre_Order(T->rchild);
+    }
+}
+void In_Order(BiTree T){
+    if(T){
+        In_Order(T->lchild);
+        visit(T);
+        In_Order(T->rchild);
+    }
+}
+void Post_Order(BiTree T){
+    if(T){
+        Post_Order(T->lchild);
+        Post_Order(T->rchild);
+        visit(T);
+    }
+}
+BiTree Set_Tree(int test[],int low,int high){
+    if(low<=high){
+        auto *p=(BTNode *)malloc(sizeof(BTNode));
+        int mid=(low+high)/2;
+        p->data=test[mid];
+        p->lchild=Set_Tree(test,low,mid-1);
+        p->rchild=Set_Tree(test,mid+1,high);
+        return p;
+    }
+    else return nullptr;
+}
+int Depth(BiTree T){
+    int ld,rd;
+    if(T==nullptr)
+        return 0;
+    else{
+        ld=Depth(T->lchild);
+        rd=Depth(T->rchild);
+        return (ld>rd?ld:rd)+1;
+    }
+}
+int Leaves(BiTree T){
+    if(T==nullptr)
+        return 0;
+    else if(T->lchild==nullptr && T->rchild==nullptr)
+        return 1;
+    else
+        return Leaves(T->lchild)+Leaves(T->rchild);
+}
+void Not_Leaves(BiTree T,int &n){
+    if(T){
+        if(T->lchild||T->rchild)
+            n++;
+        Not_Leaves(T->lchild,n);
+        Not_Leaves(T->rchild,n);
+    }
+}
+
+void Pre(BiTree T){
+    int top=-1;
+    BiTree stack[10];
+    BiTree p=T;
+    while(p||top!=-1){
+        if(p){
+            stack[++top]=p;
+            visit(p);
+            p=p->lchild;
+        }
+        else{
+            p=stack[top--];
+            p=p->rchild;
+        }
+    }
+}
+void In(BiTree T){
+    int top=-1;
+    BiTree stack[10];
+    BiTree p=T;
+    while(p||top!=-1){
+       if(p){
+           stack[++top]=p;
+           p=p->lchild;
+       }
+       else{
+           p=stack[top--];
+           visit(p);
+           p=p->rchild;
+       }
+    }
+}
+void Post(BiTree T){
+    int top=-1;
+    BiTree stack[10];
+    BiTree p=T,r=nullptr;
+    while(p||top!=-1){
+        if(p){
+            stack[++top]=p;
+            p=p->lchild;
+        }
+        else{
+            p=stack[top];
+            if(p->rchild==nullptr||p->rchild==r){
+                top--;
+                visit(p);
+                r=p;
+                p=nullptr;
+            }
+            else{
+                p=p->rchild;
+            }
+        }
+    }
+}
+void Level_Order(BiTree T){
+    int front=0,rear=0;
+    BiTree que[10];
+    BTNode *p=T;
+    que[rear++]=p;
+    while(front!=rear){
+        p=que[front++];
+        visit(p);
+        if(p->lchild)
+            que[rear++]=p->lchild;
+        if(p->rchild)
+            que[rear++]=p->rchild;
+    }
+}
+
+void PreThTree(ThreadTree T,ThreadTree &pre){
+    if(T){
+        if(T->lchild==nullptr){
+            T->lchild=pre;
+            T->ltag=1;
+        }
+        if(pre!= nullptr&&pre->rchild== nullptr){
+            pre->rchild=T;
+            pre->rtag=1;
+        }
+        pre=T;
+        if(T->ltag==0)
+            PreThTree(T->lchild,pre);
+        PreThTree(T->lchild,pre);
+    }
+}
+void CreatePreThread(ThreadTree T){
+    ThreadTree pre= nullptr;
+    if(T)
+    {
+        PreThTree(T, pre);
+        if(pre->rchild == nullptr)
+            pre->rtag = 1;
+    }
+}
+
+void InThTree(ThreadTree T,ThreadTree &pre){
+    if(T){
+        InThTree(T->lchild,pre);
+        if(T->lchild==nullptr){
+            T->lchild=pre;
+            T->ltag=1;
+        }
+        if(pre!= nullptr&&pre->rchild== nullptr){
+            pre->rchild=T;
+            pre->rtag=1;
+        }
+        pre=T;
+        InThTree(T->lchild,pre);
+    }
+}
+void CreateInThread(ThreadTree T){
+    ThreadTree pre= nullptr;
+    if(T)
+    {
+        InThTree(T, pre);
+        if(pre->rchild == nullptr)
+            pre->rtag = 1;
+    }
+}
+void PostThTree(ThreadTree T,ThreadTree &pre){
+    if(T){
+        PostThTree(T->lchild,pre);
+        PostThTree(T->lchild,pre);
+        if(T->lchild==nullptr){
+            T->lchild=pre;
+            T->ltag=1;
+        }
+        if(pre!= nullptr&&pre->rchild== nullptr){
+            pre->rchild=T;
+            pre->rtag=1;
+        }
+        pre=T;
+    }
+}
+void CreatePostThread(ThreadTree T){
+    ThreadTree pre= nullptr;
+    if(T)
+    {
+        InThTree(T, pre);
+        if(pre->rchild == nullptr)
+            pre->rtag = 1;
+    }
+}
+BiTree Pre_In(int pre[],int In[],int low1,int high1,int low2,int high2){
+    BTNode *p= nullptr;//这一步定义很关键，最后序列已经处理完成的时候，最后一个节点的左右孩子必须是空指针；
+    if(low1<=high1&&low2<=high2) {
+        int i, pos;
+        p = (BTNode *) malloc(sizeof(BTNode));
+        p->data=pre[low1];
+        for(i=low2;In[i]!=pre[low1];i++);
+        pos=i;
+        int llen=pos-low2;
+        int rlen=high2-pos;
+        p->lchild=Pre_In(pre,In,low1+1,low1+llen,low2,low2+llen-1);
+        p->rchild=Pre_In(pre,In,high1-rlen+1,high1,high2-rlen+1,high2);
+    }
+    return p;
+}
+//判断一棵树是否是完全二叉树
+bool IsComplete(BiTree T){
+    int front=0,rear=0;
+    BiTree que[10];
+    BTNode *p=T;
+    que[rear++]=p;
+    while(front!=rear){
+        p=que[front++];
+        if(p){
+            que[rear++]=p->lchild;
+            que[rear++]=p->rchild;
+        }
+        else{
+            while(front!=rear){
+                p=que[front++];
+                if(p)
+                    return false;
+            }
+        }
+    }
+    return true;
+}
+//判断一棵树是否是平衡二叉树
+void IsAVL(BiTree T,int &balance,int &height){
+    int bl=0,br=0,hl=0,hr=0;
+    if(T== nullptr){
+        height=0;
+        balance=1;
+    }
+    else if(T->lchild== nullptr && T->rchild== nullptr){
+        height=1;
+        balance=1;
+    }
+    else{
+        IsAVL(T->lchild,bl,hl);
+        IsAVL(T->rchild,br,hr);
+        height=(hl>hr?hl:hr)+1;
+        if(abs(hl-hr)<2)
+            balance=bl&&br;
+        else
+            balance=0;
+    }
+}
+//交换二叉树的左右子树
+void SwapLR(BiTree T){
+    if(T){
+        SwapLR(T->lchild);
+        SwapLR(T->rchild);
+        BTNode *p;
+        p=T->lchild;
+        T->lchild=T->rchild;
+        T->rchild=p;
+    }
+}
+//先序遍历的第k个节点的值，count必须加引用
+void Pre_Order_k(BiTree T,int k,int &count,int &value){
+    if(T&&count<=k){
+        count++;
+        if(count==k)
+            value=T->data;
+        Pre_Order_k(T->lchild,k,count,value);
+        Pre_Order_k(T->rchild,k,count,value);
+    }
+}
+//删除值为x的子树
+void Del_tree(BiTree T){//删除一颗树，并清空内存空间
+    if(T){
+        Del_tree(T->lchild);
+        Del_tree(T->rchild);
+        free(T);
+    }
+}
+void Del_X_in_tree(BiTree T,int x){
+    if(T){
+        Del_X_in_tree(T->lchild,x);
+        Del_X_in_tree(T->rchild,x);
+        if (T->lchild && T->lchild->data == x){//如果某个指针为p=null，执行p->lchid会出错
+            Del_tree(T->lchild);
+            T->lchild = nullptr;
+        }
+        if (T->rchild && T->rchild->data == x){
+            Del_tree(T->rchild);
+            T->rchild = nullptr;
+        }
+    }
+}
+//找到x的祖先
+void Print_x_ancestor(BiTree T,int x,int que[],int &top){
+    if(T){
+        que[++top]=T->data;
+        if(T->data==x){
+            for(int i=0;i<top;i++)
+                printf("%d ",que[i]);
+        }
+        Print_x_ancestor(T->lchild,x,que,top);
+        Print_x_ancestor(T->rchild,x,que,top);
+        top--;
+    }
+}
+//找到公共祖先
+void Common_ancestor(BiTree T,int x,int y,int que[],int &top){
+    if(T){
+        que[++top]=T->data;
+        if(T->data==x){
+            for(int i=0;i<top;i++)
+                printf("%d ",que[i]);
+        }
+        if(T->data==y){
+            for(int i=0;i<top;i++)
+                printf("%d ",que[i]);
+        }
+        Common_ancestor(T->lchild,x,y,que,top);
+        Common_ancestor(T->rchild,x,y,que,top);
+        top--;
+    }
+}
+void Ancestor(BiTree T,int temp[],int a[],int b[],int &top,int m,int n){
+    if(T){
+        temp[++top]=T->data;
+        if(T->data==m){
+            for(int i=0;i<=top;i++)
+                a[i]=temp[i];
+        }
+        if(T->data==n){
+            for(int i=0;i<=top;i++)
+                b[i]=temp[i];
+        }
+        Ancestor(T->lchild,temp,a,b,top,m,n);
+        Ancestor(T->rchild,temp,a,b,top,m,n);
+        top--;
+    }
+}
+//二叉树的宽度
+void Wipth(BiTree T){
+    DWNode que[maxsize];
+    int wipth[maxsize],level;
+    for(int & i : wipth)
+        i=0;
+    int front=0,rear=0;
+    BiTree p=T;
+    que[rear].p=p;
+    que[rear].level=1;
+    rear++;
+    while(front!=rear){
+        level=que[front].level;
+        wipth[level]++;
+        p=que[front].p;
+        front++;
+        if(p->lchild){
+            que[rear].p=p->lchild;
+            que[rear].level=level+1;
+            rear++;
+        }
+        if(p->rchild){
+            que[rear].p=p->rchild;
+            que[rear].level=level+1;
+            rear++;
+        }
+    }
+    for(int i=1;i<level+1;i++)
+        printf("%d ",wipth[i]);
+}
+
+void leaves_to_list(BiTree T,BiTree &head,BiTree &pre){
+    if(T){
+        if(T->lchild==nullptr&&T->rchild==nullptr){
+            if(!head){
+                head=T;
+            }
+            if(pre){
+                pre->rchild=T;
+            }
+            pre=T;
+        }
+        leaves_to_list(T->lchild,head,pre);
+        leaves_to_list(T->rchild,head,pre);
+    }
+}
